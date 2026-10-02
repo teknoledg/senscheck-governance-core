@@ -3,11 +3,20 @@
   "name": "senscheck-governance-core",
   "version": "0.1.0",
   "description": "Review and implement fail-closed boundaries around consequential AI-agent actions.",
-  "author": { "name": "TEKNOLED-G LIMITED" },
+  "author": {
+    "name": "TEKNOLED-G LIMITED"
+  },
   "homepage": "https://github.com/teknoledg/senscheck-governance-core",
   "repository": "https://github.com/teknoledg/senscheck-governance-core",
   "license": "Apache-2.0",
-  "keywords": ["ai-agents", "governance", "fail-closed", "mcp", "security", "guardrails"],
+  "keywords": [
+    "ai-agents",
+    "governance",
+    "fail-closed",
+    "mcp",
+    "security",
+    "guardrails"
+  ],
   "extensions": {
     "com.openai": {
       "interface": {
@@ -16,14 +25,19 @@
         "longDescription": "Agents fail. Fail closed. Review a repository for fail-open paths, then wrap consequential tools and functions with SensCheck Governance Core: canonical effects, deterministic policy, authority checks, human approval and receipts. Works entirely locally; no account, no network calls.",
         "developerName": "TEKNOLED-G LIMITED",
         "category": "Coding",
-        "capabilities": ["Read", "Write"],
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
         "websiteURL": "https://github.com/teknoledg/senscheck-governance-core",
         "defaultPrompt": [
           "Use SensCheck Governance to review this repository for fail-open agent actions.",
           "Use SensCheck Governance to protect this tool with a fail-closed boundary."
         ],
         "brandColor": "#0B3D5C",
-        "logo": "./assets/logo.svg"
+        "logo": "./assets/logo.svg",
+        "privacyPolicyURL": "https://github.com/teknoledg/senscheck-governance-core/blob/main/PRIVACY.md",
+        "termsOfServiceURL": "https://github.com/teknoledg/senscheck-governance-core/blob/main/TERMS.md"
       }
     }
   }
