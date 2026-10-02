@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="SensCheck Governance Core">
+  <rect width="128" height="128" rx="24" fill="#0B3D5C"/>
+  <path d="M64 20 100 34v28c0 24-15 38-36 46C43 100 28 86 28 62V34z" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M48 64l12 12 22-26" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,11 @@
+{
+  "name": "senscheck-governance-core",
+  "version": "0.1.0",
+  "description": "Review and implement fail-closed boundaries around consequential agent actions.",
+  "author": { "name": "TEKNOLED-G LIMITED" },
+  "homepage": "https://github.com/teknoledg/senscheck-governance-core",
+  "repository": "https://github.com/teknoledg/senscheck-governance-core",
+  "license": "Apache-2.0",
+  "keywords": ["ai-agents", "governance", "fail-closed", "mcp"],
+  "skills": "./skills/"
+}

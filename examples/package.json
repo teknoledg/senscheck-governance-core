@@ -1,0 +1,22 @@
+{
+  "name": "senscheck-examples",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Runnable examples for SensCheck Governance Core.",
+  "scripts": {
+    "filesystem": "node filesystem-agent/index.mjs",
+    "coding": "node coding-agent/index.mjs",
+    "deployment": "node deployment-agent/index.mjs",
+    "mcp": "node mcp-tool/index.mjs",
+    "database": "node database-agent/index.mjs",
+    "http": "node http-agent/index.mjs"
+  },
+  "dependencies": {
+    "@senscheck/governance-core": "workspace:^",
+    "@senscheck/generic-tools": "workspace:^",
+    "@senscheck/governance-mcp": "workspace:^",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.0"
+  }
+}

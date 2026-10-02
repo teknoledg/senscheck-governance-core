@@ -1,0 +1,17 @@
+{
+  "name": "@senscheck/governance-cli",
+  "version": "0.1.0",
+  "description": "senscheck CLI: init, audit, check, test and explain for fail-closed agent governance.",
+  "license": "Apache-2.0",
+  "author": "TEKNOLED-G LIMITED",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "bin": { "senscheck": "./dist/bin.js" },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }, "./package.json": "./package.json" },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": { "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit", "clean": "rm -rf dist" },
+  "dependencies": { "@senscheck/governance-core": "workspace:^" },
+  "publishConfig": { "access": "public" }
+}

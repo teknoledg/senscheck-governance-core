@@ -1,0 +1,30 @@
+{
+  "name": "@senscheck/governance-core",
+  "version": "0.1.0",
+  "description": "Fail-closed governance for AI agents, tools and MCP servers.",
+  "license": "Apache-2.0",
+  "author": "TEKNOLED-G LIMITED",
+  "type": "module",
+  "sideEffects": false,
+  "engines": { "node": ">=20" },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./node": { "types": "./dist/node.d.ts", "import": "./dist/node.js" },
+    "./schema/policy.schema.json": "./schema/policy.schema.json",
+    "./schema/effect.schema.json": "./schema/effect.schema.json",
+    "./schema/receipt.schema.json": "./schema/receipt.schema.json",
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "schema", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["ai-agents", "governance", "fail-closed", "mcp", "policy", "guardrails"],
+  "repository": { "type": "git", "url": "git+https://github.com/teknoledg/senscheck-governance-core.git" },
+  "homepage": "https://github.com/teknoledg/senscheck-governance-core#readme",
+  "publishConfig": { "access": "public" }
+}

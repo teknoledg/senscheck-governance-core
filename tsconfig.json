@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@senscheck/governance-core/node": ["packages/core/src/node.ts"],
+      "@senscheck/governance-core": ["packages/core/src/index.ts"],
+      "@senscheck/governance-mcp": ["packages/mcp/src/index.ts"],
+      "@senscheck/generic-tools": ["packages/adapters/generic/src/index.ts"],
+      "@senscheck/governance-openai": ["packages/adapters/openai/src/index.ts"]
+    }
+  },
+  "include": ["packages/*/src", "packages/*/test", "packages/adapters/*/src", "packages/adapters/*/test", "tests", "vitest.config.ts"]
+}

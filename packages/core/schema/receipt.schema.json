@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://senscheck.dev/schema/receipt.schema.json",
+  "title": "SensCheck governance receipt v1.0",
+  "description": "integrity is an unkeyed sha256: tamper-evidence only, not a signature.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["receiptVersion", "receiptId", "effectId", "effectDigest", "principalId", "decision", "reasonCodes", "authorized", "attempted", "occurred", "phase", "evaluatedAt", "policyVersion", "metadata", "integrity"],
+  "properties": {
+    "receiptVersion": { "const": "1.0" },
+    "receiptId": { "type": "string", "minLength": 1 },
+    "effectId": { "type": "string", "minLength": 1 },
+    "effectDigest": { "type": ["string", "null"] },
+    "principalId": { "type": "string", "minLength": 1 },
+    "decision": { "enum": ["ALLOW", "DENY", "FAIL_CLOSED", "REQUIRE_APPROVAL"] },
+    "reasonCodes": { "type": "array", "items": { "type": "string" } },
+    "authorized": { "type": "boolean" },
+    "attempted": { "type": "boolean" },
+    "occurred": { "type": "boolean" },
+    "phase": { "enum": ["DECIDED", "AUTHORIZED", "COMPLETED", "FAILED"] },
+    "evaluatedAt": { "type": "string", "format": "date-time" },
+    "policyVersion": { "type": "string", "minLength": 1 },
+    "metadata": { "type": "object" },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "digest"],
+      "properties": { "algorithm": { "const": "sha256" }, "digest": { "type": "string" } }
+    }
+  }
+}

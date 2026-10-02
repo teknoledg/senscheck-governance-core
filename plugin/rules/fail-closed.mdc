@@ -1,0 +1,18 @@
+---
+description: Fail closed for consequential AI-agent actions. Apply when writing or reviewing code where an agent, model or tool can delete, write, deploy, spend, send, execute or change permissions.
+alwaysApply: false
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.mjs", "**/*.py"]
+---
+
+# Fail closed for consequential agent actions
+
+- INTELLIGENCE != AUTHORITY. A model proposes; it never grants itself permission to execute.
+- UNKNOWN != ALLOW. Missing, stale, conflicting, malformed, unavailable or timed-out governance means FAIL_CLOSED, never permission.
+- GOVERNANCE FAILURE = NO CONSEQUENTIAL AUTHORITY. `catch { return true }`, `?? true`, `.catch(() => allow)` on an authorization path is a defect.
+- Route every consequential side effect (filesystem mutation, process/shell execution, database write, HTTP POST/PUT/PATCH/DELETE, deployment, credential change) through `@senscheck/governance-core` (`governance.execute`, `wrapFunction`, `wrapTool`) at the function that performs the effect, not only at the agent loop.
+- Authorize a canonical, typed effect (verb, resource, parameters, risk), never free text. A material change to the effect needs fresh authorization.
+- The effect callback must be unreachable on DENY, FAIL_CLOSED and REQUIRE_APPROVAL.
+- Human approval must come from a channel the agent cannot write to. Never read "approved" from model output, tool arguments, or effect metadata.
+- Do not give the governed agent access to approval, authority or receipt-store write APIs.
+- Do not weaken a deny, widen an allowlist, or lower a risk level to make a test pass. Fix the cause.
+- Do not claim safety the SDK does not provide: it is an application-level boundary, not an OS sandbox, auth system or safety-certified controller.

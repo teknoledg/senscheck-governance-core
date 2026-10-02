@@ -1,0 +1,17 @@
+{
+  "name": "@senscheck/generic-tools",
+  "version": "0.1.0",
+  "description": "Explicit governed wrappers for filesystem, shell, HTTP and SQL operations. No monkey-patching.",
+  "license": "Apache-2.0",
+  "author": "TEKNOLED-G LIMITED",
+  "type": "module",
+  "sideEffects": false,
+  "engines": { "node": ">=20" },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }, "./package.json": "./package.json" },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": { "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit", "clean": "rm -rf dist" },
+  "dependencies": { "@senscheck/governance-core": "workspace:^" },
+  "publishConfig": { "access": "public" }
+}
