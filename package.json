@@ -16,7 +16,9 @@
     "test:coverage": "vitest run --coverage",
     "validate:schemas": "node scripts/validate-schemas.mjs",
     "validate:plugins": "node scripts/validate-plugins.mjs",
-    "verify": "pnpm build && pnpm typecheck && pnpm lint && pnpm test:coverage && pnpm validate:schemas && pnpm validate:plugins",
+    "build:site": "node scripts/build-site.mjs",
+    "validate:site": "node scripts/build-site.mjs --check",
+    "verify": "pnpm build && pnpm typecheck && pnpm lint && pnpm test:coverage && pnpm validate:schemas && pnpm validate:plugins && pnpm validate:site",
     "release:check": "node scripts/release-check.mjs"
   },
   "devDependencies": {

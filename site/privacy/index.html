@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy policy · SensCheck Governance — Core</title>
+<meta name="description" content="Privacy policy for SensCheck Governance — Core: the software collects no data.">
+<style>:root{color-scheme:light dark;--bg:#fff;--fg:#14202b;--muted:#5b6b7a;--accent:#0b3d5c;--line:#d8e0e7;--code:#eef3f7}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1419;--fg:#e6edf3;--muted:#9aa9b7;--accent:#7cc0e8;--line:#27323c;--code:#18222b}}
+:root[data-theme=light]{--bg:#fff;--fg:#14202b;--muted:#5b6b7a;--accent:#0b3d5c;--line:#d8e0e7;--code:#eef3f7}
+:root[data-theme=dark]{--bg:#0e1419;--fg:#e6edf3;--muted:#9aa9b7;--accent:#7cc0e8;--line:#27323c;--code:#18222b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}
+header,main,footer{max-width:46rem;margin:0 auto;padding:0 16px}header{padding-top:24px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+header a{color:var(--fg);font-weight:600;text-decoration:none}header span{color:var(--muted);margin-left:8px}
+nav{margin-top:6px;font-size:.9rem}nav a{color:var(--accent);margin-right:14px;font-weight:400}
+main{padding-top:20px;padding-bottom:40px}h1{font-size:1.8rem;line-height:1.25}h2{font-size:1.25rem;margin-top:2rem}a{color:var(--accent)}
+code{background:var(--code);padding:.1em .35em;border-radius:4px;font-size:.9em}.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}th{background:var(--code)}
+footer{padding-top:16px;padding-bottom:32px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}li{margin:.25rem 0}</style>
+</head>
+<body>
+<header><a href="/">SensCheck Governance — Core</a><span>Agents fail. Fail closed.</span>
+<nav><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/schema/">Schemas</a><a href="https://github.com/teknoledg/senscheck-governance-core">GitHub</a></nav></header>
+<main>
+<h1>Privacy policy</h1>
+<p><strong>SensCheck Governance — Core</strong> (the SDK, CLI, MCP and adapter packages, and the Cursor / Agent Plugin), published by TEKNOLED-G LIMITED ("we", "us").</p>
+<p><em>Last updated: 2026-10-02. DRAFT: have this reviewed by counsel before relying on it.</em></p>
+<h2>Short version</h2>
+<p>SensCheck Governance — Core runs entirely on your machine or in your own infrastructure. <strong>We do not collect, receive, store or sell any data from your use of it.</strong> There are no accounts, no telemetry, no analytics and no network calls made by the software.</p>
+<h2>What the software does with data</h2>
+<div class="table-wrap"><table><thead><tr><th>Component</th><th>Reads</th><th>Writes</th><th>Sends off your machine</th></tr></thead><tbody><tr><td><code>@senscheck/governance-core</code>, <code>-mcp</code>, adapters</td><td>the effects, policies and provider responses you pass in</td><td>receipts only to the sink you configure (memory, console/stderr, or a file you choose)</td><td>nothing</td></tr><tr><td><code>@senscheck/governance-cli</code></td><td>files in directories you point it at (<code>audit</code>), your <code>senscheck.config.json</code>, receipt files you name (<code>explain</code>)</td><td><code>senscheck.config.json</code>, an example file and a <code>.gitignore</code> entry (<code>init</code>)</td><td>nothing</td></tr><tr><td>Plugin (skills, rule, commands)</td><td>whatever your AI agent already has access to in your project</td><td>whatever edits you ask the agent to make</td><td>nothing by itself. See below</td></tr></tbody></table></div>
+<p>Receipts can contain identifiers such as principal IDs, effect IDs, verbs and resource names (for example file paths). They do not include effect parameters. You control where they are stored; protect them like any log.</p>
+<h2>AI agents and third parties</h2>
+<p>The plugin consists of instructions (skills, a rule and commands) that your AI coding agent (Cursor, ChatGPT/Codex or another) follows. Any data your agent sends to its model provider is governed by that provider's terms and privacy policy, not by us. We do not receive it.</p>
+<p>If you choose to connect SensCheck Core to optional commercial services (for example a hosted policy or identity provider), those services have their own privacy terms.</p>
+<h2>Our websites and repository</h2>
+<p>The source code is hosted on GitHub. GitHub processes data about visitors and contributors under GitHub's own privacy statement. If you email us (for example to report a vulnerability), we use the information you send only to respond and act on your message, and keep it no longer than needed.</p>
+<h2>Your rights</h2>
+<p>Because we hold no personal data from your use of the software, there is nothing for us to export or delete. For anything we hold from correspondence, contact us to ask for access, correction or deletion; you may have rights under laws such as the GDPR/UK GDPR.</p>
+<h2>Children</h2>
+<p>The software is a developer tool and is not directed at children.</p>
+<h2>Changes</h2>
+<p>We will post changes in this file; the history is in the repository.</p>
+<h2>Contact</h2>
+<p>TEKNOLED-G LIMITED. security@teknoledg.com</p>
+</main>
+<footer>© TEKNOLED-G LIMITED. Software licensed under Apache-2.0.</footer>
+</body>
+</html>
