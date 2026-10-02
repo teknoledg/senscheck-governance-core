@@ -6,12 +6,41 @@
   "author": "TEKNOLED-G LIMITED",
   "type": "module",
   "sideEffects": false,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }, "./package.json": "./package.json" },
-  "files": ["dist", "README.md", "LICENSE"],
-  "scripts": { "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit", "clean": "rm -rf dist" },
-  "dependencies": { "@senscheck/governance-core": "workspace:^" },
-  "publishConfig": { "access": "public" }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@senscheck/governance-core": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/teknoledg/senscheck-governance-core.git",
+    "directory": "packages/adapters/openai"
+  },
+  "homepage": "https://github.com/teknoledg/senscheck-governance-core#readme",
+  "bugs": {
+    "url": "https://github.com/teknoledg/senscheck-governance-core/issues"
+  }
 }
