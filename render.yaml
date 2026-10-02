@@ -2,7 +2,7 @@
 # No server logic, no secrets, no database. The SDK itself never calls this site.
 services:
   - type: web
-    name: senscheck-site
+    name: senscheck
     runtime: static
     buildCommand: node scripts/build-site.mjs
     staticPublishPath: ./site
