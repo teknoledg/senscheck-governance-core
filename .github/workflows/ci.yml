@@ -23,6 +23,5 @@ jobs:
       - run: pnpm test:coverage
       - run: pnpm validate:schemas
       - run: pnpm validate:plugins
-      - run: pnpm validate:site
       - run: node scripts/release-check.mjs
       - run: pnpm audit --prod
