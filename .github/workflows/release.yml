@@ -63,6 +63,7 @@ jobs:
             .artifacts/*.tgz
             .artifacts/release-check.json
           if-no-files-found: error
+          include-hidden-files: true   # .artifacts is a dot-directory; excluded by default
 
   publish:
     needs: build
