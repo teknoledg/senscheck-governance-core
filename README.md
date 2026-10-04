@@ -141,7 +141,7 @@ Core is complete without them. Optional packages plug in through the same provid
 
 Develop: `pnpm install && pnpm verify` (Node 20+, pnpm 10).
 
-License: Apache-2.0. © TEKNOLED-G LIMITED.
+License: Apache-2.0 (code). The SensCheck name and logo are covered by [TRADEMARKS.md](TRADEMARKS.md). Verify official releases with [docs/RELEASING.md](docs/RELEASING.md). © TEKNOLED-G LIMITED.
 
 ## Site
 

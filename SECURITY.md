@@ -32,6 +32,10 @@ The invariants FC-001..FC-020 (see [docs/concepts.md](docs/concepts.md)) hold fo
 - `senscheck audit` is heuristic pattern matching, not proof.
 - The SQL classifier in `@senscheck/generic-tools` is conservative but is not a SQL parser; use database permissions as the real boundary.
 
+## Verifying releases
+
+Official packages are built and published by `.github/workflows/release.yml` with npm provenance and GitHub build attestations. How to check them: [docs/RELEASING.md](docs/RELEASING.md). Names and logos are covered by [TRADEMARKS.md](TRADEMARKS.md); a build without verifiable provenance is unofficial.
+
 ## Supply chain
 
 Core has zero runtime dependencies. Releases are built from the repository by CI; verify with `npm pack` and compare tarball contents. No network access is performed by any package.

@@ -1,0 +1,94 @@
+# Release pipeline: build, verify, attest and (only when a human approves) publish to npm with provenance.
+#
+# Safety design:
+#  - Manual trigger only (workflow_dispatch). Nothing publishes on push or tag.
+#  - `dry_run` defaults to true: it builds, verifies, packs and attests but publishes nothing.
+#  - The publish job runs in the GitHub Environment "npm-release". In repo settings, add REQUIRED REVIEWERS to that
+#    environment so a human must approve before any publish step runs. Store the npm token as an environment secret
+#    named NPM_TOKEN (granular token, publish-only, scoped to @senscheck). Never put it in repo-level secrets.
+#  - All third-party actions are pinned to full commit SHAs.
+#  - Provenance: npm records which repo, commit and workflow built each package; GitHub attests the tarball hashes.
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: build, verify, pack, attest, but do NOT publish"
+        type: boolean
+        default: true
+      confirm_version:
+        description: "Type the version in packages/core/package.json (e.g. 0.1.0) to allow a real publish"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write       # keyless signing for attestations
+      attestations: write
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with: { version: 10.12.3 }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 22, cache: pnpm }
+      - id: v
+        run: echo "version=$(node -p "require('./packages/core/package.json').version")" >> "$GITHUB_OUTPUT"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test:coverage
+      - run: pnpm validate:schemas
+      - run: pnpm validate:plugins
+      - run: pnpm audit --prod
+      - name: Pack, inspect and install-test the exact tarballs (release-check)
+        run: node scripts/release-check.mjs
+      - name: Attest the tarballs (build provenance)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: .artifacts/*.tgz
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tarballs
+          path: |
+            .artifacts/*.tgz
+            .artifacts/release-check.json
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    environment: npm-release     # configure required reviewers on this environment
+    permissions:
+      contents: read
+      id-token: write            # npm provenance
+    steps:
+      - name: Guard — the typed version must match the built version
+        run: |
+          if [ "${{ inputs.confirm_version }}" != "${{ needs.build.outputs.version }}" ]; then
+            echo "confirm_version '${{ inputs.confirm_version }}' does not match '${{ needs.build.outputs.version }}'. Not publishing."; exit 1
+          fi
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 22, registry-url: "https://registry.npmjs.org" }
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with: { name: tarballs, path: tarballs }
+      - name: Publish in dependency order, with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          for pkg in governance-core governance-mcp generic-tools governance-openai governance-cli; do
+            f=$(ls tarballs/senscheck-${pkg}-*.tgz)
+            echo "publishing $f"
+            npm publish "$f" --provenance --access public
+          done
