@@ -156,6 +156,10 @@ export function governMcpServer<S extends ServerLike>(server: S, options: McpGov
         return (name: string, config: { inputSchema?: unknown; annotations?: McpAnnotations }, cb: Handler) =>
           target.registerTool(name, config, governHandler(name, cb, config.inputSchema !== undefined, config.annotations, options));
       }
+      if (prop === "server") {
+        // The low-level Server (setRequestHandler) would let code register tool handlers that skip governance.
+        throw new Error("SensCheck: the low-level `server` is not exposed on a governed MCP server; use registerTool().");
+      }
       if (prop === "tool") {
         return () => {
           throw new Error("SensCheck: use registerTool() on a governed MCP server; tool() is not supported and would bypass governance.");

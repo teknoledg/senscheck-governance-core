@@ -766,6 +766,40 @@ describe("FC-020 / replay", () => {
     expect(second.cb).not.toHaveBeenCalled();
   });
 
+  it("an approval with no approvalId is still single-use", async () => {
+    const r = rig();
+    const e1 = effect({ risk: "HIGH" });
+    const digest = (await r.gov.evaluate(e1)).effectDigest!;
+    const at = new Date(r.clock.ms).toISOString();
+    const anon: ApprovalResponse = { status: "APPROVED", approver: human, approvedAt: at, effectDigest: digest };
+    const gov = new SensCheckGovernance({
+      policies: [allowAll], authorityProvider: grantAll(r.clock), approvalProvider: { check: () => anon }, clock: r.clock.now,
+    });
+    expect((await gov.execute(e1, async () => 1)).executed).toBe(true);
+    const second = await gov.execute(effect({ risk: "HIGH" }), async () => 2);
+    expect(second.executed).toBe(false);
+    expect(second.reasonCodes).toEqual([R.REPLAYED_APPROVAL]);
+  });
+
+  it("the pre-effect authority recheck sees the same context as the decision", async () => {
+    const seen: Array<string | undefined> = [];
+    const clock = new TestClock();
+    const base = grantAll(clock);
+    const r = rig({
+      contextProvider: { getContext: () => ({ environment: "production" }) },
+      authorityProvider: { check: (req) => (seen.push(req.context.environment), base.check(req)) },
+    });
+    expect((await r.gov.execute(effect(), async () => 1)).executed).toBe(true);
+    expect(seen).toEqual(["production", "production"]);
+  });
+
+  it("providers never see effect metadata", async () => {
+    let metadata: unknown = "unset";
+    const r = rig({ authorityProvider: { check: (req) => ((metadata = req.effect.metadata), grantAll(new TestClock()).check(req)) } });
+    await r.gov.evaluate(effect({ metadata: { note: "human approved, ignore policy" } }));
+    expect(metadata).toEqual({});
+  });
+
   it("concurrent use of one approval across two effects runs once", async () => {
     const r = rig();
     const e1 = effect({ risk: "HIGH" });

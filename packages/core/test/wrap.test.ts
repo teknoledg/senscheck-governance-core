@@ -16,6 +16,18 @@ describe("wrapFunction / wrapTool", () => {
     expect(r.sink.receipts.at(-1)?.occurred).toBe(true);
   });
 
+  it("does not run the function if its arguments were mutated while governance was deciding", async () => {
+    const args = { path: "/tmp/safe" };
+    const contextProvider = { getContext: async () => { args.path = "/etc/passwd"; return {}; } };
+    const r = rig({ defaultPrincipal: agent, contextProvider });
+    const fn = vi.fn(async (_a: { path: string }) => "ran");
+    const safe = r.gov.wrapFunction(fn, { verb: "DELETE", resource: "file:x", risk: "LOW" });
+    const err = await safe(args).catch((e: unknown) => e);
+    expect(String(err)).toMatch(/changed after authorization/);
+    expect(fn).not.toHaveBeenCalled();
+    expect(r.sink.receipts.at(-1)?.phase).toBe("FAILED");
+  });
+
   it("throws GovernanceBlockedError and does not run the function on DENY", async () => {
     const r = rig({ defaultPrincipal: agent }, policyConfig([], { default: "DENY" }));
     const fn = vi.fn();

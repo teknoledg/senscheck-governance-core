@@ -33,7 +33,7 @@ Unknown top-level fields, missing fields, or invalid values yield `FAIL_CLOSED /
 
 ## Canonicalization and digest
 
-`canonicalizeEffect` returns a **deep-frozen clone** plus a sha256 **digest** over `schemaVersion`, `principal`, `action`, `parameters` and `risk` (sorted-key JSON). `effectId`, `proposedAt` and `metadata` are excluded, so two proposals of the same material effect share a digest; single-use is enforced by `effectId` and approval IDs. Approvals and optionally authority are bound to the digest. The callback receives the frozen clone, so later mutation of your original object cannot change what runs.
+`canonicalizeEffect` returns a **deep-frozen clone** plus a sha256 **digest** over `schemaVersion`, `principal`, `action`, `parameters` and `risk` (sorted-key JSON). `effectId`, `proposedAt` and `metadata` are excluded, so two proposals of the same material effect share a digest; single-use is enforced by `effectId` and approval IDs. Approvals and optionally authority are bound to the digest. `metadata` is never passed to policy, risk, context, authority, approval or identity providers (it is recorded in receipts only), so nothing an approver or policy sees is outside the digest. The callback receives the frozen clone; `wrapFunction`, which calls your function with its live arguments, rebuilds the effect from them immediately before the call and refuses to run if the digest changed, so mutating an argument while governance is deciding cannot change what runs.
 
 ## Choosing verb, resource, risk
 

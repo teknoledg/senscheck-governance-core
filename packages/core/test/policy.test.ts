@@ -11,6 +11,12 @@ const decide = (cfg: PolicyConfig, i: PolicyEvaluationInput) => new LocalPolicyP
 describe("glob", () => {
   it("matches * ? and literals, escaping regex characters", () => {
     expect(globMatch("production:*", "production:api:eu")).toBe(true);
+    expect(globMatch("*", "")).toBe(true);
+    expect(globMatch("a*b*c", "aXXbYYc")).toBe(true);
+    expect(globMatch("a*b*c", "aXXbYY")).toBe(false);
+    expect(globMatch("a?c", "ac")).toBe(false);
+    expect(globMatch("a.c", "abc")).toBe(false); // regex metacharacters are literal
+    expect(globMatch("*a*a*a*a*a*b", "a".repeat(5000))).toBe(false); // must return promptly, not backtrack exponentially
     expect(globMatch("file:/tmp/?.txt", "file:/tmp/a.txt")).toBe(true);
     expect(globMatch("file:/tmp/?.txt", "file:/tmp/ab.txt")).toBe(false);
     expect(globMatch("a.b", "aXb")).toBe(false);

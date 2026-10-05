@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { GovernanceBlockedError, MemoryReceiptSink, SensCheckGovernance, StaticApprovalProvider, StaticAuthorityProvider, createEffect, type PolicyConfig } from "@senscheck/governance-core";
 import { classifySql, governFetch, governFs, governProcess, governSql } from "@senscheck/generic-tools";
-import { resolve } from "node:path";
+import { mkdirSync, mkdtempSync, realpathSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 const principal = { id: "agent-1", type: "agent" as const };
 const human = { id: "alice", type: "human" };
@@ -31,7 +33,7 @@ describe("governFs", () => {
     await g.mkdir("/tmp/d", { recursive: true });
     await g.rename("/tmp/a", "/tmp/b");
     expect(fs.writeFile).toHaveBeenCalledWith("/tmp/a/../b.txt", "hello", undefined);
-    expect(sink.receipts[0]?.metadata["resource"]).toBe("file:/tmp/b.txt");
+    expect(sink.receipts[0]?.metadata["resource"]).toBe("file:/tmp/b.txt"); // as written, then (if different) the real path
   });
 
   it("recursive delete is HIGH risk: needs approval, and does not run without it", async () => {
@@ -55,6 +57,33 @@ describe("governFs", () => {
     const fs = fake();
     await expect(governFs(fs, o).writeFile("/tmp/x", { not: "bytes" } as never)).rejects.toBeInstanceOf(GovernanceBlockedError);
     expect(fs.writeFile).not.toHaveBeenCalled();
+  });
+
+  it("rename governs the destination too, not just the source", async () => {
+    const { o } = rig({ ...allow, resourceAllowlist: ["file:/workspace/*"] });
+    const fs = fake();
+    await expect(governFs(fs, o).rename("/workspace/a", "/etc/cron.d/evil")).rejects.toMatchObject({ decision: "DENY" });
+    expect(fs.rename).not.toHaveBeenCalled();
+    await governFs(fs, o).rename("/workspace/a", "/workspace/b");
+    expect(fs.rename).toHaveBeenCalledTimes(1);
+  });
+
+  it("a symlink cannot be used to reach a denylisted real path", async () => {
+    const real = realpathSync(mkdtempSync(join(tmpdir(), "senscheck-link-")));
+    mkdirSync(join(real, "secret"));
+    symlinkSync(join(real, "secret"), join(real, "innocent"));
+    const { o } = rig({ ...allow, resourceDenylist: [`file:${real}/secret/*`] });
+    const fs = fake();
+    await expect(governFs(fs, o).writeFile(join(real, "innocent", "key"), "x")).rejects.toMatchObject({ decision: "DENY" });
+    expect(fs.writeFile).not.toHaveBeenCalled();
+  });
+
+  it("a denylist written against the lexical path still applies when the real path differs (macOS /etc)", async () => {
+    const real = realpathSync(mkdtempSync(join(tmpdir(), "senscheck-link-")));
+    symlinkSync(real, join(real, "alias"));
+    const { o } = rig({ ...allow, resourceDenylist: [`file:${join(real, "alias")}/*`] });
+    const fs = fake();
+    await expect(governFs(fs, o).writeFile(join(real, "alias", "f"), "x")).rejects.toMatchObject({ decision: "DENY" });
   });
 
   it("resource denylists apply (defence in depth)", async () => {
@@ -97,6 +126,15 @@ describe("governFetch", () => {
     expect(sink.receipts[0]?.metadata["resource"]).toBe("http:https://api.example.com/items");
   });
 
+  it("binds headers, and never follows redirects on governed calls", async () => {
+    const { o } = rig();
+    const f = vi.fn(async (_u: string, _i?: Record<string, unknown>) => "resp");
+    const g = governFetch(f, o);
+    await g("https://api.example.com/items", { method: "POST", headers: { "X-A": "1" } });
+    expect(f.mock.calls[0]?.[1]).toMatchObject({ redirect: "error" });
+    await expect(g("https://api.example.com/items", { method: "POST", headers: { A: 1 as never } })).rejects.toBeInstanceOf(GovernanceBlockedError);
+  });
+
   it("an unhashable body or bad URL fails closed", async () => {
     const { o } = rig();
     const f = vi.fn(async () => "resp");
@@ -118,6 +156,25 @@ describe("governSql", () => {
     expect(classifySql("DROP TABLE t")).toBe("DESTRUCTIVE");
     expect(classifySql("")).toBe("UNKNOWN");
     expect(classifySql("PRAGMA writable_schema=1")).toBe("UNKNOWN");
+  });
+
+  it("is not fooled by comment markers inside string literals", () => {
+    expect(classifySql("SELECT '--'; DROP TABLE users")).toBe("UNKNOWN");
+    expect(classifySql("SELECT '/*'; DROP TABLE users; SELECT '*/'")).toBe("UNKNOWN");
+    expect(classifySql("SELECT \"--\"; DROP TABLE users")).toBe("UNKNOWN");
+    expect(classifySql("SELECT 'it''s'; DROP TABLE users")).toBe("UNKNOWN");
+    expect(classifySql("SELECT 'unterminated")).toBe("UNKNOWN");
+    expect(classifySql("SELECT 'a\\'; DROP TABLE t; --'")).toBe("UNKNOWN");
+    expect(classifySql("SELECT $$x$$")).toBe("UNKNOWN");
+    expect(classifySql("SELECT 1 # c\n; DROP TABLE t")).toBe("UNKNOWN");
+  });
+
+  it("literals are data: a keyword inside a string does not make a read unknown; side-effect functions do", () => {
+    expect(classifySql("SELECT * FROM t WHERE note = 'please DELETE me' AND a = 'x;y'")).toBe("READ");
+    expect(classifySql("SELECT pg_terminate_backend(1)")).toBe("UNKNOWN");
+    expect(classifySql("SELECT nextval('s')")).toBe("UNKNOWN");
+    expect(classifySql("SELECT * FROM t FOR UPDATE")).toBe("UNKNOWN");
+    expect(classifySql("SELECT * FROM pg_tables")).toBe("READ");
   });
 
   it("reads pass through; writes run when allowed; destructive/unknown need approval", async () => {

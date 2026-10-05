@@ -139,7 +139,8 @@ describe("governMcpServer against the real MCP SDK", () => {
     const governed = governMcpServer(server as never, options) as unknown as McpServer & { tool: () => void };
     expect(() => governed.tool()).toThrow(/registerTool/);
     expect(typeof governed.connect).toBe("function");
-    expect((governed as unknown as { server: unknown }).server).toBeDefined();
+    // the low-level server would let code register tool handlers that skip governance
+    expect(() => (governed as unknown as { server: unknown }).server).toThrow(/low-level/);
   });
 
   it("handler errors propagate to the MCP SDK (which reports them as tool errors)", async () => {
