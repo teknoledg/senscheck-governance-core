@@ -44,6 +44,8 @@ export interface AuditFinding {
 
 export interface AuditReport {
   scannedFiles: number;
+  /** Files NOT scanned, so a clean report is never read as full coverage. */
+  skipped: { symlinks: number; oversized: number };
   findings: AuditFinding[];
   disclaimer: string;
 }
@@ -51,7 +53,7 @@ export interface AuditReport {
 export const AUDIT_DISCLAIMER =
   "Static pattern matching only. It finds LIKELY consequential operations; it cannot prove any path is governed or safe, and it misses dynamic and indirect calls. Review each finding, and run senscheck test for behavioural checks.";
 
-async function* walk(dir: string): AsyncGenerator<string> {
+async function* walk(dir: string, skipped: AuditReport["skipped"]): AsyncGenerator<string> {
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
@@ -59,10 +61,13 @@ async function* walk(dir: string): AsyncGenerator<string> {
     return;
   }
   for (const entry of entries) {
-    if (entry.isSymbolicLink()) continue;
+    if (entry.isSymbolicLink()) {
+      skipped.symlinks++;
+      continue;
+    }
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!SKIP_DIRS.has(entry.name)) yield* walk(full);
+      if (!SKIP_DIRS.has(entry.name)) yield* walk(full, skipped);
     } else if (EXTS.has(extname(entry.name))) {
       yield full;
     }
@@ -96,14 +101,18 @@ export function auditSource(file: string, text: string): AuditFinding[] {
 export async function auditPath(root: string): Promise<AuditReport> {
   const info = await stat(root);
   const files: string[] = [];
-  if (info.isDirectory()) for await (const f of walk(root)) files.push(f);
+  const skipped = { symlinks: 0, oversized: 0 };
+  if (info.isDirectory()) for await (const f of walk(root, skipped)) files.push(f);
   else files.push(root);
   const findings: AuditFinding[] = [];
   for (const file of files) {
     const s = await stat(file);
-    if (s.size > MAX_FILE_BYTES) continue;
+    if (s.size > MAX_FILE_BYTES) {
+      skipped.oversized++;
+      continue;
+    }
     const rel = info.isDirectory() ? relative(root, file) : file;
     findings.push(...auditSource(rel, await readFile(file, "utf8")));
   }
-  return { scannedFiles: files.length, findings, disclaimer: AUDIT_DISCLAIMER };
+  return { scannedFiles: files.length, skipped, findings, disclaimer: AUDIT_DISCLAIMER };
 }

@@ -1,6 +1,6 @@
 import { LocalPolicyProvider } from "./policy/local.js";
 import { canonicalizeEffect, isIsoTime, maxRisk, riskRank } from "./effect.js";
-import { createReceipt, verifyReceipt } from "./receipt.js";
+import { createReceipt, verifyReceipt, type ReceiptInput } from "./receipt.js";
 import { MemoryReceiptSink } from "./providers/local.js";
 import { ReasonCode } from "./reason-codes.js";
 import { RISK_LEVELS } from "./types.js";
@@ -76,6 +76,8 @@ interface Decided extends GovernanceResult {
   authorityValidUntil?: number;
   approvalValidUntil?: number;
   approvalId?: string;
+  /** Context the decision was made with; the authority recheck must see the same one. */
+  context?: GovernanceContext;
   metadata: Record<string, unknown>;
 }
 
@@ -133,6 +135,10 @@ function isRisk(v: unknown): v is RiskLevel {
 }
 function isIdentity(v: unknown): v is { verified: boolean } {
   return isRecord(v) && typeof v["verified"] === "boolean";
+}
+/** Providers must not see agent-influenced metadata: it is not covered by the digest. */
+function withoutMetadata(effect: Readonly<Effect>): Readonly<Effect> {
+  return Object.freeze({ ...effect, metadata: Object.freeze({}) });
 }
 function short(v: unknown): string {
   return typeof v === "string" ? v.slice(0, 128) : "unknown";
@@ -218,7 +224,7 @@ export class SensCheckGovernance {
 
     // Final gate, async half: re-verify authority as late as practical.
     if (this.recheckAuthority) {
-      const recheck = await this.checkAuthority(canonical, this.baseContext(), this.clock());
+      const recheck = await this.checkAuthority(canonical, decided.context as GovernanceContext, this.clock());
       if (!recheck.ok) {
         decided = this.blocked(decided, {
           decision: recheck.blocked.decision,
@@ -336,7 +342,10 @@ export class SensCheckGovernance {
     }
 
     const canonical = parsed.canonical;
-    const { effect, digest } = canonical;
+    const { digest } = canonical;
+    // metadata is agent-influenced and not covered by the digest, so providers never see it: what an approver or
+    // policy is shown is exactly what the digest binds. (It is still recorded in receipts via `base.metadata`.)
+    const effect = withoutMetadata(canonical.effect);
     const base = {
       effectId: effect.effectId,
       effectDigest: digest,
@@ -440,6 +449,7 @@ export class SensCheckGovernance {
         authorityValidUntil: authority.validUntil,
         approvalValidUntil,
         approvalId,
+        context,
       },
       now,
     );
@@ -466,7 +476,8 @@ export class SensCheckGovernance {
     if (provider === undefined) {
       return { ok: false, blocked: { decision: "FAIL_CLOSED", codes: [ReasonCode.NO_AUTHORITY_PROVIDER] } };
     }
-    const { effect, digest } = canonical;
+    const { digest } = canonical;
+    const effect = withoutMetadata(canonical.effect);
     const r = await this.checked(
       () => provider.check({ effect, effectDigest: digest, context }),
       isAuthorityResponse,
@@ -509,7 +520,8 @@ export class SensCheckGovernance {
     });
     if (provider === undefined) return fail("REQUIRE_APPROVAL", ...why, ReasonCode.APPROVAL_REQUIRED);
 
-    const { effect, digest } = canonical;
+    const { digest } = canonical;
+    const effect = withoutMetadata(canonical.effect);
     const r = await this.checked(() => provider.check({ effect, effectDigest: digest, context }), isApprovalResponse, "APPROVAL");
     if (!r.ok) return fail("FAIL_CLOSED", r.code);
     const a = r.value;
@@ -529,10 +541,12 @@ export class SensCheckGovernance {
       a.expiresAt === undefined ? Number.POSITIVE_INFINITY : Date.parse(a.expiresAt),
     );
     if (validUntil <= nowMs) return fail("FAIL_CLOSED", ReasonCode.STALE_APPROVAL);
-    if (this.replayProtection && a.approvalId !== undefined && this.consumedApprovals.has(a.approvalId)) {
+    // An approval without an id is still single-use: key it by what identifies the grant.
+    const approvalKey = a.approvalId ?? `anon:${digest}:${approver.id}:${a.approvedAt as string}`;
+    if (this.replayProtection && this.consumedApprovals.has(approvalKey)) {
       return fail("FAIL_CLOSED", ReasonCode.REPLAYED_APPROVAL);
     }
-    return { ok: true, validUntil, approvalId: a.approvalId };
+    return { ok: true, validUntil, approvalId: approvalKey };
   }
 
   /** Last synchronous checks before the callback. Returns a Blocked if the effect must not run. */
@@ -629,8 +643,7 @@ export class SensCheckGovernance {
    * no receipt, no effect. `afterAllow` marks a block that happened after an ALLOW receipt was already written.
    */
   private async record(decided: Decided, afterAllow: boolean): Promise<GovernanceResult> {
-    const build = (d: Decided): GovernanceReceipt =>
-      createReceipt({
+    const receiptInput = (d: Decided): ReceiptInput => ({
         effectId: d.effectId,
         effectDigest: d.effectDigest,
         principalId: d.principalId,
@@ -643,14 +656,18 @@ export class SensCheckGovernance {
         evaluatedAt: new Date(d.decidedAtMs).toISOString(),
         policyVersion: d.policyVersion,
         metadata: { ...d.metadata, matchedRuleIds: d.matchedRuleIds, ...(afterAllow ? { blockedAfterAllowReceipt: true } : {}) },
-      });
+    });
+    const build = (d: Decided): GovernanceReceipt => createReceipt(receiptInput(d));
 
     let final = decided;
     let receipt = build(final);
     const written = await this.writeReceipt(receipt);
     if (!written && final.decision === "ALLOW") {
       final = this.blocked(final, { decision: "FAIL_CLOSED", codes: [ReasonCode.RECEIPT_SINK_FAILURE] });
-      receipt = build(final);
+      // The failed write may still land later (e.g. it timed out). Name the receipt this one overrides so an
+      // auditor never has to guess which of two receipts for one effect is true.
+      const superseded = receipt.receiptId;
+      receipt = createReceipt({ ...receiptInput(final), metadata: { ...receiptInput(final).metadata, supersedesReceiptId: superseded } });
       await this.writeReceipt(receipt); // best effort
     }
     if (this.auditSink !== undefined) {

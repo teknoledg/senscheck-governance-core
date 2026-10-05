@@ -87,6 +87,9 @@ async function cmdAudit(args: string[], io: Io): Promise<number> {
       io.out(`${f.file}:${f.line}  [${f.category}]${f.fileMentionsSenscheck ? " (file mentions @senscheck)" : ""}\n    ${f.snippet}`);
     }
     io.out(`\nScanned ${report.scannedFiles} files; ${report.findings.length} likely consequential operations (${unguarded.length} in files that never mention @senscheck).`);
+    if (report.skipped.symlinks + report.skipped.oversized > 0) {
+      io.out(`Not scanned: ${report.skipped.symlinks} symlinks, ${report.skipped.oversized} files over 1 MB.`);
+    }
     io.out(report.disclaimer);
   }
   return values["fail-on-findings"] === true && unguarded.length > 0 ? 1 : 0;

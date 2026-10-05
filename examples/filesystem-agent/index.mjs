@@ -1,5 +1,5 @@
 // Governed filesystem mutations with @senscheck/generic-tools.
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rm } from "node:fs/promises";
 import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,7 +7,8 @@ import { governFs } from "@senscheck/generic-tools";
 import { GovernanceBlockedError } from "@senscheck/governance-core";
 import { agent, assert, build, line } from "../_shared.mjs";
 
-const dir = await mkdtemp(join(tmpdir(), "senscheck-fs-"));
+// Policy matches real locations (symlinks are followed), so resolve the sandbox path first (macOS: /var -> /private/var).
+const dir = await realpath(await mkdtemp(join(tmpdir(), "senscheck-fs-")));
 const { governance } = build({
   version: 1,
   default: "FAIL_CLOSED",
