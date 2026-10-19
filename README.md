@@ -125,6 +125,8 @@ SensCheck Core is an **application-level governance SDK**. It is not an OS sandb
 
 ## Commercial extensions
 
+What is free, what is a tool, and what the optional hosted platform adds (and why) is in [docs/editions.md](docs/editions.md).
+
 Core is complete without them. Optional packages plug in through the same provider interfaces (`PolicyProvider`, `AuthorityProvider`, `IdentityProvider`, `ContextProvider`, `RiskProvider`, ...) and can never weaken the invariants, since Core re-validates every response. Contracts only are documented here; see [OPEN_CORE_BOUNDARY.md](OPEN_CORE_BOUNDARY.md) and [docs/enterprise-upgrade.md](docs/enterprise-upgrade.md).
 
 ## Repository

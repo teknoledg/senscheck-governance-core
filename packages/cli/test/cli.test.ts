@@ -1,8 +1,9 @@
 import { mkdtemp, readFile, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { generateKeyPairSync, sign } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { MemoryReceiptSink, SensCheckGovernance, createEffect } from "@senscheck/governance-core";
+import { MemoryReceiptSink, SensCheckGovernance, canonicalJson, createEffect, createReceipt, sha256Hex } from "@senscheck/governance-core";
 import { FileReceiptSink } from "@senscheck/governance-core/node";
 import { auditSource, main, runSelfTests, type Io } from "../src/index.js";
 
@@ -220,5 +221,59 @@ describe("senscheck usage", () => {
     expect(unknown.err).toContain("unknown command");
     expect((await cli([])).code).toBe(2);
     expect((await cli(["check", "--bogus"])).code).toBe(2);
+  });
+});
+
+describe("senscheck verify-proof", () => {
+  // Written independently of the verifier: this is the documented proof format, built from first principles.
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+  const pem = publicKey.export({ type: "spki", format: "pem" }).toString();
+  const receipt = createReceipt({ effectId: "eff_1", effectDigest: null, principalId: "a1", decision: "DENY", reasonCodes: ["POLICY_DENY"], authorized: false, attempted: false, occurred: false, phase: "DECIDED", evaluatedAt: "2026-10-05T10:00:00.000Z", policyVersion: "v1" });
+  const prevHash = "0".repeat(64);
+  const hash = sha256Hex(`${prevHash}\n${canonicalJson(receipt)}`);
+  const signed = (msg: string) => ({ alg: "Ed25519", keyId: "k1", value: sign(null, Buffer.from(msg), privateKey).toString("base64") });
+  const proof = { version: 1, kind: "receipt-proof", tenantId: "ten_1", seq: 1, prevHash, hash, storedAt: "2026-10-05T10:00:01.000Z", receipt, signature: signed(`senscheck-proof-v1\ntenant:ten_1\nseq:1\nhash:${hash}\nstoredAt:2026-10-05T10:00:01.000Z`) };
+  const write = async (name: string, v: unknown, dir: string) => { await writeFile(join(dir, name), typeof v === "string" ? v : JSON.stringify(v)); };
+
+  it("accepts a genuine proof and says what it does not prove", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "sc-proof-"));
+    await write("p.json", proof, dir); await write("k.pem", pem, dir);
+    const r = await cli(["verify-proof", "p.json", "--public-key", "k.pem"], dir);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("VALID");
+    expect(r.out).toContain("Not checked: that this key belongs to the vendor");
+  });
+
+  it("rejects an altered receipt, a moved position, a wrong key, and a wrong fingerprint", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "sc-proof-"));
+    await write("k.pem", pem, dir);
+    await write("other.pem", generateKeyPairSync("ed25519").publicKey.export({ type: "spki", format: "pem" }).toString(), dir);
+    await write("edited.json", { ...proof, receipt: { ...receipt, decision: "ALLOW" } }, dir);
+    await write("moved.json", { ...proof, seq: 2 }, dir);
+    await write("p.json", proof, dir);
+    expect((await cli(["verify-proof", "edited.json", "--public-key", "k.pem"], dir)).code).toBe(1);
+    expect((await cli(["verify-proof", "moved.json", "--public-key", "k.pem"], dir)).out).toContain("signature does not verify");
+    expect((await cli(["verify-proof", "p.json", "--public-key", "other.pem"], dir)).out).toContain("signature does not verify");
+    const fp = await cli(["verify-proof", "p.json", "--public-key", "k.pem", "--fingerprint", "ab".repeat(32)], dir);
+    expect(fp.code).toBe(1);
+    expect(fp.out).toContain("fingerprint");
+  });
+
+  it("verifies a chain attestation, and rejects garbage and missing arguments", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "sc-proof-"));
+    await write("k.pem", pem, dir);
+    const att = { version: 1, kind: "chain-attestation", tenantId: "ten_1", count: 5, headHash: hash, at: "2026-10-05T11:00:00.000Z", signature: signed(`senscheck-attest-v1\ntenant:ten_1\ncount:5\nhead:${hash}\nat:2026-10-05T11:00:00.000Z`) };
+    await write("a.json", att, dir); await write("bad.json", "not json", dir);
+    expect((await cli(["verify-proof", "a.json", "--public-key", "k.pem"], dir)).code).toBe(0);
+    expect((await cli(["verify-proof", "a.json", "--public-key", "k.pem", "--fingerprint", "zz"], dir)).code).toBe(1);
+    expect((await cli(["verify-proof", "a.json"], dir)).code).toBe(2);
+    expect((await cli(["verify-proof", "bad.json", "--public-key", "k.pem"], dir)).code).toBe(2);
+    expect((await cli(["verify-proof", "a.json", "--public-key", "missing.pem"], dir)).code).toBe(2);
+    await write("junk.json", { kind: "receipt-proof" }, dir);
+    expect((await cli(["verify-proof", "junk.json", "--public-key", "k.pem"], dir)).code).toBe(1);
+    await write("kind.json", { version: 1, kind: "x", signature: { alg: "Ed25519", keyId: "k", value: "AA==" } }, dir);
+    expect((await cli(["verify-proof", "kind.json", "--public-key", "k.pem"], dir)).out).toContain("unknown proof kind");
+    await write("bad.pem", "nope", dir);
+    expect((await cli(["verify-proof", "a.json", "--public-key", "bad.pem"], dir)).out).toContain("not a valid PEM");
   });
 });
