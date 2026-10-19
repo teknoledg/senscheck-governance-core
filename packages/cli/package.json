@@ -2,6 +2,7 @@
   "name": "@senscheck/governance-cli",
   "version": "0.1.0",
   "description": "senscheck CLI: init, audit, check, test and explain for fail-closed agent governance.",
+  "keywords": ["cli", "ai-agents", "governance", "fail-closed", "policy", "audit"],
   "license": "Apache-2.0",
   "author": "TEKNOLED-G LIMITED",
   "type": "module",

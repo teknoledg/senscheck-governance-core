@@ -5,12 +5,14 @@ import { validatePolicyConfig, type GovernanceReceipt } from "@senscheck/governa
 import { auditPath } from "./audit.js";
 import { explainReceipt } from "./explain.js";
 import { defaultIo, type Io } from "./io.js";
+import { verifyProofBundle } from "./proof.js";
 import { runSelfTests } from "./selftest.js";
 import { EXAMPLE_WRAPPER, GITIGNORE_LINES, SAMPLE_CONFIG } from "./templates.js";
 
 export { auditPath, auditSource, AUDIT_PATTERNS } from "./audit.js";
 export { explainReceipt } from "./explain.js";
 export { runSelfTests } from "./selftest.js";
+export { verifyProofBundle, type ProofVerification } from "./proof.js";
 export type { Io } from "./io.js";
 
 const USAGE = `senscheck: fail-closed governance for AI agents
@@ -22,6 +24,8 @@ Usage:
   senscheck check [config]                Validate a policy configuration (default: senscheck.config.json)
   senscheck test [--config path]          Run fail-closed behavioural tests
   senscheck explain <receipt-file>        Explain a governance receipt (JSON or JSONL)
+  senscheck verify-proof <bundle> --public-key <pem-file> [--fingerprint <sha256>]
+                                          Verify a platform-signed receipt proof or chain attestation, offline
 
 Exit codes: 0 ok, 1 findings/failures, 2 usage or I/O error.`;
 
@@ -153,6 +157,38 @@ async function cmdTest(args: string[], io: Io): Promise<number> {
   return failed === 0 ? 0 : 1;
 }
 
+async function cmdVerifyProof(args: string[], io: Io): Promise<number> {
+  const { values, positionals } = parseArgs({ args, options: { "public-key": { type: "string" }, fingerprint: { type: "string" } }, allowPositionals: true });
+  const file = positionals[0];
+  const keyFile = values["public-key"];
+  if (file === undefined || keyFile === undefined) {
+    io.err("usage: senscheck verify-proof <bundle.json> --public-key <pem-file> [--fingerprint <sha256-hex>]");
+    return 2;
+  }
+  const bundle = await loadJson(resolve(io.cwd, file));
+  if (!bundle.ok) {
+    io.err(`cannot read ${file}: ${bundle.error}`);
+    return 2;
+  }
+  let pem: string;
+  try {
+    pem = await readFile(resolve(io.cwd, keyFile), "utf8");
+  } catch (err) {
+    io.err(`cannot read ${keyFile}: ${err instanceof Error ? err.message : String(err)}`);
+    return 2;
+  }
+  const r = verifyProofBundle(bundle.value, pem, values.fingerprint);
+  for (const line of r.summary) io.out(line);
+  if (r.valid) {
+    io.out(`VALID: signed by the key with fingerprint ${r.keyFingerprint ?? ""}`);
+    io.out(values.fingerprint === undefined ? "Not checked: that this key belongs to the vendor. Pass --fingerprint with a value from an out-of-band source." : "Key fingerprint matched the value you supplied.");
+    return 0;
+  }
+  io.out("INVALID");
+  for (const e of r.errors) io.out(`  - ${e}`);
+  return 1;
+}
+
 async function cmdExplain(args: string[], io: Io): Promise<number> {
   const { positionals } = parseArgs({ args, allowPositionals: true });
   const file = positionals[0];
@@ -204,6 +240,8 @@ export async function main(argv: string[], io: Io = defaultIo()): Promise<number
         return await cmdTest(rest, io);
       case "explain":
         return await cmdExplain(rest, io);
+      case "verify-proof":
+        return await cmdVerifyProof(rest, io);
       case "--help":
       case "-h":
       case "help":

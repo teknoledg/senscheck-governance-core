@@ -74,6 +74,26 @@ const testOut = cli.find(([a]) => a[0] === "test")?.[1].stdout ?? "";
 step("senscheck test reports all scenarios passing", /(\d+)\/\1 passed/.test(testOut), testOut.split("\n").filter((l) => /passed/.test(l)).join(""));
 step("senscheck init example wrapper runs", run("node", ["--require", preload, "senscheck.example.mjs"], { cwd: fixture }).status === 0);
 
+// 5b. verify-proof from the packed CLI: a genuine signed proof passes, an edited one fails
+writeFileSync(join(fixture, "make-proof.mjs"), `
+import { generateKeyPairSync, sign } from "node:crypto";
+import { writeFileSync } from "node:fs";
+import { canonicalJson, createReceipt, sha256Hex } from "@senscheck/governance-core";
+const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+const receipt = createReceipt({ effectId: "eff_1", effectDigest: null, principalId: "a1", decision: "DENY", reasonCodes: ["POLICY_DENY"], authorized: false, attempted: false, occurred: false, phase: "DECIDED", evaluatedAt: "2026-10-05T10:00:00.000Z", policyVersion: "v1" });
+const prevHash = "0".repeat(64), storedAt = "2026-10-05T10:00:01.000Z";
+const hash = sha256Hex(prevHash + "\\n" + canonicalJson(receipt));
+const msg = "senscheck-proof-v1\\ntenant:ten_1\\nseq:1\\nhash:" + hash + "\\nstoredAt:" + storedAt;
+const proof = { version: 1, kind: "receipt-proof", tenantId: "ten_1", seq: 1, prevHash, hash, storedAt, receipt, signature: { alg: "Ed25519", keyId: "k1", value: sign(null, Buffer.from(msg), privateKey).toString("base64") } };
+writeFileSync("proof.json", JSON.stringify(proof));
+writeFileSync("edited.json", JSON.stringify({ ...proof, receipt: { ...receipt, decision: "ALLOW" } }));
+writeFileSync("key.pem", publicKey.export({ type: "spki", format: "pem" }).toString());
+`);
+const made = run("node", ["--require", preload, "make-proof.mjs"], { cwd: fixture });
+const good = cliRun(["verify-proof", "proof.json", "--public-key", "key.pem"]);
+const edited = cliRun(["verify-proof", "edited.json", "--public-key", "key.pem"]);
+step("senscheck verify-proof accepts a genuine proof and rejects an edited one (packed)", made.status === 0 && good.status === 0 && /VALID/.test(good.stdout) && edited.status === 1, `genuine exit ${good.status}, edited exit ${edited.status}`);
+
 // 6. DENY / FAIL_CLOSED never invoke the callback: direct proof against packed core
 writeFileSync(join(fixture, "proof.mjs"), `
 import { SensCheckGovernance, StaticAuthorityProvider, createEffect } from "@senscheck/governance-core";
