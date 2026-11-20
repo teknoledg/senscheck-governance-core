@@ -16,7 +16,7 @@ Official packages are built from this repository by `.github/workflows/release.y
    gh attestation verify senscheck-governance-core-*.tgz --repo teknoledg/senscheck-governance-core
    ```
 
-_These checks only apply once a version has actually been published by that workflow. If a package has no provenance, or a fork or mirror republishes it, treat it as unofficial._
+_These checks only apply once a version has actually been published by that workflow. 0.1.0 was not: it has no provenance, so check it against the checksums in [SECURITY.md](../SECURITY.md#verifying-releases) instead. For any later version, if a package has no provenance, or a fork or mirror republishes it, treat it as unofficial._
 
 What this proves: **where and how the package was built** (a particular repo, commit and workflow). It does **not** prove the code is free of bugs, and it is not a code signature by a person.
 

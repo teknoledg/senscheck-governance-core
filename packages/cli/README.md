@@ -9,3 +9,9 @@ npx @senscheck/governance-cli explain receipts.jsonl
 ```
 
 Binary name: `senscheck`. Exit codes: 0 ok, 1 findings/failures, 2 usage or I/O error. Local only; no network.
+
+Verify a platform-signed proof offline (Business plan; see [docs/proofs.md](https://github.com/teknoledg/senscheck-governance-core/blob/main/docs/proofs.md)):
+
+```bash
+npx @senscheck/governance-cli verify-proof proof.json --public-key platform-key.pem --fingerprint <sha256>
+```

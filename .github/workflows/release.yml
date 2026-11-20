@@ -17,7 +17,7 @@ on:
         type: boolean
         default: true
       confirm_version:
-        description: "Type the version in packages/core/package.json (e.g. 0.1.0) to allow a real publish"
+        description: "Type the version in packages/core/package.json (e.g. 0.3.0) to allow a real publish"
         type: string
         default: ""
 
@@ -91,5 +91,6 @@ jobs:
           for pkg in governance-core governance-mcp generic-tools governance-openai governance-cli; do
             f=$(ls tarballs/senscheck-${pkg}-*.tgz)
             echo "publishing $f"
-            npm publish "$f" --provenance --access public
+            # A path with a slash and no ./ is parsed as a GitHub repo, not a tarball.
+            npm publish "./$f" --provenance --access public
           done

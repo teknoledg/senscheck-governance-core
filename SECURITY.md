@@ -27,14 +27,30 @@ The invariants FC-001..FC-020 (see [docs/concepts.md](docs/concepts.md)) hold fo
 - Receipts use an unkeyed sha256: tamper-evident only. No signatures, no non-repudiation, no chaining. Store them where the agent cannot write or delete (receipt deletion is out of scope for Core).
 - Replay protection, and consumption of approvals, is in-memory per process. Multi-process deployments need a shared single-use store (implement via your own `ApprovalProvider`).
 - A callback that has started cannot be rolled back or time-limited by Core.
-- `EnvironmentAuthorityProvider` is weak by design: code that can set env vars in the process can grant itself authority.
+- `EnvironmentAuthorityProvider` is weak by design, and it does not read the process environment. It only sees the map the operator passes in; whoever can fill that map can grant authority. An omitted map grants nothing.
 - `StaticApprovalProvider.approve()` is a plain method: never expose it to the governed agent.
 - `senscheck audit` is heuristic pattern matching, not proof.
 - The SQL classifier in `@senscheck/generic-tools` is conservative but is not a SQL parser; use database permissions as the real boundary.
 
 ## Verifying releases
 
-Official packages are built and published by `.github/workflows/release.yml` with npm provenance and GitHub build attestations. How to check them: [docs/RELEASING.md](docs/RELEASING.md). Names and logos are covered by [TRADEMARKS.md](TRADEMARKS.md); a build without verifiable provenance is unofficial.
+Releases after 0.1.0 are built and published by `.github/workflows/release.yml` with npm provenance and GitHub build attestations. How to check them: [docs/RELEASING.md](docs/RELEASING.md). Names and logos are covered by [TRADEMARKS.md](TRADEMARKS.md).
+
+**0.1.0 is the exception: it carries no npm provenance or GitHub build attestation.** It was published from a maintainer machine, from tarballs that passed `scripts/release-check.mjs` (38 of 38 checks). An official 0.1.0 package matches these registry checksums (sha1, as `npm view <package>@0.1.0 dist.shasum` reports them):
+
+| Package | dist.shasum |
+|---|---|
+| `@senscheck/governance-core` | `35079d4201034b239d6b314f467597e7c7c385bc` |
+| `@senscheck/governance-cli` | `ca5c9f0d949c24371cc37337290695e42029ca1a` |
+| `@senscheck/governance-mcp` | `cdcd9f579c3e516c40baea3815481f6cfca4da45` |
+| `@senscheck/generic-tools` | `36b1279c76b2a7f96a56233faa75bf68ed737944` |
+| `@senscheck/governance-openai` | `8d44a2a0ae0775113b5ca6583e4c06498e35d789` |
+
+```bash
+npm pack @senscheck/governance-core@0.1.0 && shasum senscheck-governance-core-0.1.0.tgz
+```
+
+From 0.1.1 on, a build without verifiable provenance is unofficial.
 
 ## Supply chain
 

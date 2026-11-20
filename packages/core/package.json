@@ -1,6 +1,6 @@
 {
   "name": "@senscheck/governance-core",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Fail-closed governance for AI agents, tools and MCP servers.",
   "license": "Apache-2.0",
   "author": "TEKNOLED-G LIMITED",

@@ -2,6 +2,8 @@
 
 SensCheck Governance — Core is the free, open (Apache-2.0) core. It is complete and useful alone. Optional commercial packages plug in through public interfaces and **cannot weaken Core's safety semantics**: Core validates every provider response and treats failure as FAIL_CLOSED.
 
+See [docs/editions.md](docs/editions.md) for the same boundary from the customer's side: free SDK, free tools and plugins, optional paid platform.
+
 ## GREEN: implemented in this public repository
 
 - deterministic fail-closed semantics (ALLOW / DENY / FAIL_CLOSED / REQUIRE_APPROVAL)

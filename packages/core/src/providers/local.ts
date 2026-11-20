@@ -81,15 +81,16 @@ export class StaticAuthorityProvider implements AuthorityProvider {
 }
 
 /**
- * Authority from process environment variables set by the operator before the agent starts:
+ * Authority from an operator-supplied map. This package does not read the process environment.
+ * Pass the map in from operator-controlled code:
  *   SENSCHECK_AUTHORIZED_PRINCIPALS=agent-a,agent-b
  *   SENSCHECK_AUTHORITY_EXPIRES=2026-12-31T00:00:00Z   (required)
  *   SENSCHECK_AUTHORITY_GRANTED_BY=ops-oncall          (optional, default "operator")
- * Weak by design: any code that can set env vars in this process can grant itself authority.
+ * Weak by design: whoever can fill the map can grant authority. An omitted map grants nothing.
  */
 export class EnvironmentAuthorityProvider implements AuthorityProvider {
   constructor(
-    private readonly env: Record<string, string | undefined> = process.env,
+    private readonly env: Record<string, string | undefined> = {},
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
