@@ -107,7 +107,18 @@ describe("local providers", () => {
     expect(new EnvironmentAuthorityProvider({ ...env, SENSCHECK_AUTHORITY_EXPIRES: undefined }, clock.now).check(req()).status).toBe("NOT_GRANTED");
     expect(new EnvironmentAuthorityProvider({}, clock.now).check(req())).toMatchObject({ status: "NOT_GRANTED", grantedBy: { id: "operator" } });
     expect(new EnvironmentAuthorityProvider(env, clock.now).check(req(effect({ principal: { id: "z", type: "agent" } }))).status).toBe("NOT_GRANTED");
-    expect(new EnvironmentAuthorityProvider().check(req()).status).toBe("NOT_GRANTED");
+    const prevPrincipals = process.env.SENSCHECK_AUTHORIZED_PRINCIPALS;
+    const prevExpires = process.env.SENSCHECK_AUTHORITY_EXPIRES;
+    process.env.SENSCHECK_AUTHORIZED_PRINCIPALS = "coding-agent";
+    process.env.SENSCHECK_AUTHORITY_EXPIRES = "2027-01-01T00:00:00Z";
+    try {
+      expect(new EnvironmentAuthorityProvider().check(req()).status).toBe("NOT_GRANTED");
+    } finally {
+      if (prevPrincipals === undefined) delete process.env.SENSCHECK_AUTHORIZED_PRINCIPALS;
+      else process.env.SENSCHECK_AUTHORIZED_PRINCIPALS = prevPrincipals;
+      if (prevExpires === undefined) delete process.env.SENSCHECK_AUTHORITY_EXPIRES;
+      else process.env.SENSCHECK_AUTHORITY_EXPIRES = prevExpires;
+    }
   });
 
   it("StaticApprovalProvider tracks approvals by digest", () => {

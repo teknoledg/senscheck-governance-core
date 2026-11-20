@@ -27,7 +27,7 @@ The invariants FC-001..FC-020 (see [docs/concepts.md](docs/concepts.md)) hold fo
 - Receipts use an unkeyed sha256: tamper-evident only. No signatures, no non-repudiation, no chaining. Store them where the agent cannot write or delete (receipt deletion is out of scope for Core).
 - Replay protection, and consumption of approvals, is in-memory per process. Multi-process deployments need a shared single-use store (implement via your own `ApprovalProvider`).
 - A callback that has started cannot be rolled back or time-limited by Core.
-- `EnvironmentAuthorityProvider` is weak by design: code that can set env vars in the process can grant itself authority.
+- `EnvironmentAuthorityProvider` is weak by design, and it does not read the process environment. It only sees the map the operator passes in; whoever can fill that map can grant authority. An omitted map grants nothing.
 - `StaticApprovalProvider.approve()` is a plain method: never expose it to the governed agent.
 - `senscheck audit` is heuristic pattern matching, not proof.
 - The SQL classifier in `@senscheck/generic-tools` is conservative but is not a SQL parser; use database permissions as the real boundary.

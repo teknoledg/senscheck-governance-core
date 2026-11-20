@@ -25,6 +25,8 @@ Approver must be `type: "human"` and not the proposer; `effectDigest` must equal
 
 `LocalPolicyProvider`, `StaticAuthorityProvider`, `EnvironmentAuthorityProvider` (weak by design), `StaticApprovalProvider`, `CallbackApprovalProvider`, `MemoryReceiptSink`, `ConsoleReceiptSink` (stderr), and from `@senscheck/governance-core/node`: `FileReceiptSink` (append-only JSONL), `TerminalApprovalProvider`.
 
+`EnvironmentAuthorityProvider` reads only the map you pass (`SENSCHECK_AUTHORIZED_PRINCIPALS`, `SENSCHECK_AUTHORITY_EXPIRES`, optional `SENSCHECK_AUTHORITY_GRANTED_BY`). It does not read the process environment. Call it as `new EnvironmentAuthorityProvider(process.env)` from operator-controlled code if that map should come from the environment. With no argument it grants nothing.
+
 ## Commercial contracts
 
 `SensCheckGuardianProvider`, `MMRYContextProvider`, `SensAffectEvidenceProvider`, `AkitaIdentityProvider` are **interfaces only** in `commercial.ts`. See [enterprise-upgrade.md](enterprise-upgrade.md).

@@ -125,6 +125,16 @@ for (const [, name] of packages) {
 }
 step("no network APIs imported by shipped code", netHits.length === 0, netHits.join(","));
 
+// 7b. shipped code must not read the process environment (Socket supply-chain alert)
+const ENV_ACCESS = /\bprocess\.env\b|\bDeno\.env\b/;
+const envHits = [];
+for (const [, name] of packages) {
+  const dist = join(fixture, "node_modules", ...name.split("/"), "dist");
+  const walk = (d) => readdirSync(d).forEach((f) => { const p = join(d, f); statSync(p).isDirectory() ? walk(p) : p.endsWith(".js") && ENV_ACCESS.test(readFileSync(p, "utf8")) && envHits.push(relative(fixture, p)); });
+  walk(dist);
+}
+step("shipped code does not read the process environment", envHits.length === 0, envHits.join(","));
+
 // 8. secrets scan of tracked sources
 const SECRET = /(-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|npm_[A-Za-z0-9]{36}|sk-[A-Za-z0-9]{32,}|xox[baprs]-[A-Za-z0-9-]{10,})/;
 const hits = [];
