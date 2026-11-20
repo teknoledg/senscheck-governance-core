@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "senscheck-governance-core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Review and implement fail-closed boundaries around consequential AI-agent actions.",
   "author": {
     "name": "TEKNOLED-G LIMITED"

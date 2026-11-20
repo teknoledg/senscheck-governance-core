@@ -2,3 +2,4 @@
 2026-11-20T06:16Z commit-push — 926bde5 on release/0.1.0-prep. EnvironmentAuthorityProvider no longer reads process.env. Pushed to origin. Not published to npm.
 2026-11-20T06:22Z version-bump — package, example, and plugin versions set to 0.2.0. RELEASE_NOTES notes EnvironmentAuthorityProvider no longer reads the process environment. 0.1.0 provenance checksums left unchanged. Not committed.
 2026-11-20T06:30Z audit-fix — pnpm audit --prod clean. SDK 1.32.2, zod 4.6.7, overrides for body-parser hono fast-uri qs ip-address. ESLint 10.15.0. proof.ts no-useless-assignment fixed. typecheck, lint, 255 tests passed.
+2026-11-20T06:38Z version-bump — unreleased 0.2.0 moved to 0.3.0 across packages, examples, and plugin manifests. Not committed.

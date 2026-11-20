@@ -1,7 +1,7 @@
 {
   "name": "senscheck-governance-core-monorepo",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "SensCheck Governance — Core. Fail-closed governance for AI agents.",
   "license": "Apache-2.0",
   "type": "module",

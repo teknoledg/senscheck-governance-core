@@ -1,4 +1,4 @@
-# Release notes: 0.2.0
+# Release notes: 0.3.0
 
 `EnvironmentAuthorityProvider` no longer reads the process environment. Pass the map in from operator-controlled code: `new EnvironmentAuthorityProvider(process.env)`. Calling it with no arguments grants nothing. The release check rejects shipped code that reads `process.env`.
 
