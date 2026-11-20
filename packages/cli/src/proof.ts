@@ -67,7 +67,7 @@ export function verifyProofBundle(bundle: unknown, publicKeyPem: string, expecte
   }
 
   if (errors.length === 0 && key !== undefined && isRecord(sig)) {
-    let ok = false;
+    let ok: boolean;
     try {
       ok = edVerify(null, Buffer.from(message, "utf8"), key, Buffer.from(sig["value"] as string, "base64"));
     } catch {

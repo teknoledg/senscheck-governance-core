@@ -2,6 +2,8 @@
 
 `EnvironmentAuthorityProvider` no longer reads the process environment. Pass the map in from operator-controlled code: `new EnvironmentAuthorityProvider(process.env)`. Calling it with no arguments grants nothing. The release check rejects shipped code that reads `process.env`.
 
+Examples and development dependencies now use `@modelcontextprotocol/sdk` 1.32.2 and `zod` 4.6.7. Transitive `body-parser`, `hono`, `@hono/node-server`, `fast-uri`, `qs`, and `ip-address` are pinned to their patched releases. `pnpm audit --prod` reports no known vulnerabilities.
+
 # Release notes: 0.1.0
 
 First public release of SensCheck Governance — Core.
