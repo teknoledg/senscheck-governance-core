@@ -17,7 +17,7 @@ on:
         type: boolean
         default: true
       confirm_version:
-        description: "Type the version in packages/core/package.json (e.g. 0.1.0) to allow a real publish"
+        description: "Type the version in packages/core/package.json (e.g. 0.2.0) to allow a real publish"
         type: string
         default: ""
 

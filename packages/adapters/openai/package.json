@@ -1,6 +1,6 @@
 {
   "name": "@senscheck/governance-openai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Govern OpenAI-style function tools (name/description/parameters/execute) with SensCheck Governance Core.",
   "keywords": ["openai", "ai-agents", "governance", "fail-closed", "tool-calling"],
   "license": "Apache-2.0",
